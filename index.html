@@ -6,12 +6,13 @@
 <style>
 :root{color-scheme:light;font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN",sans-serif;background:#f7f5f1;color:#262522}*{box-sizing:border-box}body{margin:0}main{max-width:920px;margin:auto;padding:24px 18px 70px}header{display:flex;align-items:center;justify-content:space-between;margin-bottom:30px}h1{font-family:Georgia,serif;font-size:42px;font-weight:400;letter-spacing:-2px;margin:0}h2{font-size:20px;margin:0 0 14px;font-weight:650}p{line-height:1.75;color:#666157}small,.muted{color:#777168}header small{font-size:11px;letter-spacing:.08em}article{background:#fff;border:1px solid #e6e1d9;border-radius:19px;padding:22px;margin-bottom:16px;box-shadow:0 4px 12px #25201505}label{display:block;font-size:13px;font-weight:650;margin-bottom:10px}textarea,input{font:inherit;width:100%;border:1px solid #dbd6cd;border-radius:12px;background:#fff;padding:14px;color:inherit;outline-offset:2px}textarea{min-height:240px;resize:vertical;line-height:1.85}input{height:46px}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}button{border:1px solid #ded8ce;background:#fff;color:#302b24;padding:12px 15px;border-radius:11px;font:inherit;font-weight:650;cursor:pointer}button.primary{background:#302d29;color:white;border-color:#302d29}button:disabled{opacity:.5;cursor:not-allowed}button:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid #b3a18a}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.metric{background:#f8f6f2;border-radius:12px;padding:16px}.metric b{display:block;font-size:25px;margin-top:8px;font-variant-numeric:tabular-nums}.metric span{font-size:12px;color:#706b63}.wide{grid-column:1/-1}.bar{height:8px;background:#eae6df;border-radius:30px;overflow:hidden;margin-top:10px}.bar i{display:block;height:100%;background:#877560;width:0;transition:width .2s}.row{display:flex;justify-content:space-between;gap:12px;align-items:baseline}.empty{padding:24px 0;text-align:center}.hint{font-size:12px;margin:10px 0 0}.tag{font-size:12px;color:#6d6355;background:#f0ede8;padding:5px 9px;border-radius:20px}footer{text-align:center;color:#8b857e;font-size:12px;margin-top:26px}@media(min-width:680px){.grid{grid-template-columns:repeat(4,1fr)}.wide{grid-column:span 2}}@media(prefers-reduced-motion:reduce){.bar i{transition:none}}
 .blend-line{padding:12px 0;border-bottom:1px solid #eee8e0}.blend-line label{margin:0 0 7px}.blend-line input[type=range]{height:auto;padding:0;accent-color:#877560}.blend-actions{display:flex;gap:8px;align-items:center}.blend-actions input{width:84px;height:40px}.blend-result{background:#f8f6f2;border-radius:12px;padding:15px;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}.file-picker{display:none}
-</style>
+.scene-item{border-top:1px solid #ece7df;padding:13px 0}.scene-item p{margin:6px 0;white-space:pre-wrap;overflow-wrap:anywhere;color:#302d29}.scene-item select{height:38px;padding:6px;border:1px solid #d7d0c6;border-radius:8px;background:white;max-width:100%}.evidence{font-size:12px;color:#6d665d}.summary-chips{display:flex;flex-wrap:wrap;gap:8px}.summary-chips span{padding:7px 10px;border-radius:12px;background:#f4f0ea;font-size:12px}</style>
 </head>
-<body><main><header><div><h1>ruka.</h1><small>your words, your style.</small></div><span class="tag">v0.2 · 文体ブレンド</span></header>
+<body><main><header><div><h1>ruka.</h1><small>your words, your style.</small></div><span class="tag">v0.3 · 表現分析</span></header>
 <article><h2>好きな文章の特徴を見つける。</h2><p>日本語の文章を貼り付けると、文章の長さ・リズム・会話の割合などを端末内で分析します。入力した文章はサーバーに送信されません。</p><label for="source">分析する文章</label><textarea id="source" placeholder="ここに文章を貼り付けてください……" maxlength="100000"></textarea><div class="actions"><button class="primary" id="analyze">文体を分析</button><button id="sample">例文を入れる</button><button id="clear">消去する</button></div><p id="status" class="hint" role="status" aria-live="polite">文章を入力して「文体を分析」を押してください。</p></article>
 <article><div class="row"><h2>文章の輪郭</h2><span class="muted" id="count">未分析</span></div><div class="grid" id="metrics"><div class="empty wide muted">分析結果はここに表示されます。</div></div></article>
 <article><h2>文のリズム</h2><div id="rhythm" class="muted">分析後に文長の分布を表示します。</div></article>
+<article><h2>表現の構造 <span class="tag">試験版</span></h2><p>段落の役割を推定します。鉤括弧なしの台詞も候補として検出しますが、誤判定するため、分類を手動で変更できます。</p><div id="structureSummary" class="summary-chips"></div><div id="structure" class="muted">分析すると段落ごとの判定を表示します。</div><div class="actions"><button id="copyStructure" disabled>構造分析をコピー</button></div><p class="hint">単語・文の形による簡易判定です。伏線、語り手の信頼性、読者の解釈の反転は自動で確定しません。</p></article>
 <article><h2>この文体の記録</h2><label for="styleName">プリセット名</label><input id="styleName" maxlength="80" placeholder="例：静かな余白"><div class="actions"><button id="save" disabled>分析結果を保存</button><button id="export" disabled>JSONを書き出す</button></div><p class="hint">保存するのは分析値と名前だけです。元の文章は保存しません。端末のブラウザに保存します。</p><div id="saved" class="muted">まだ保存されていません。</div></article>
 <article><h2>文体をブレンドする</h2><p>保存した文体を2つ以上選び、割合を調整します。文体の統計値を混ぜ合わせ、執筆用の指示を作ります。AIによる文章生成はまだ行いません。</p><div id="blendStyles" class="muted">プリセットを2件以上保存すると利用できます。</div><div class="actions"><button id="blend" class="primary">ブレンドする</button><button id="copyBlend" disabled>指示をコピー</button><button id="saveBlend" disabled>ブレンドを保存</button></div><p id="blendStatus" class="hint" role="status" aria-live="polite"></p><div id="blendOutput" class="blend-result" hidden></div><div class="actions"><button id="exportAll">プリセットを一括書き出し</button><button id="importAll">プリセットを読み込み</button><input type="file" id="importFile" class="file-picker" accept="application/json,.json" aria-label="JSONファイルを読み込み"></div></article>
 <footer>ruka. · 文体の特徴を知るための道具です。文学的な優劣を採点するものではありません。</footer></main>
@@ -24,6 +25,51 @@ let styles=[];
 let blended=null;
 const weights={};
 try{const x=JSON.parse(localStorage.getItem(KEY)||"[]");if(Array.isArray(x))styles=x.filter(v=>v&&typeof v.name==="string"&&v.features&&typeof v.features==="object").slice(0,100)}catch(e){$("status").textContent="保存データを読み込めませんでした。分析は利用できます。"}
+
+const PARAGRAPH_TYPES={dialogue:"台詞",psychology:"心理・内省",body:"身体描写",scenery:"情景描写",report:"報告・説明",other:"その他・未確定"};
+let structureRows=[];
+const containsAny=(s,words)=>words.some(w=>s.includes(w));
+function classifyParagraph(text){
+ const t=text.trim(),length=[...t].length;
+ const quotes=/^[「『][^」』]+[」』]$/u.test(t);
+ const report=containsAny(t,["司法解剖","警察は","報じた","判明した","捜査","翌日新聞"]);
+ const mind=containsAny(t,["思った","気がした","わからない","知っていた","思い出す","だろう","つもり","愛おしい","正直","予感","心配"]);
+ const body=containsAny(t,["瞳","腕","指","頬","耳","唇","涙","髪","手のひら","抱き","口付け","撫で"]);
+ const scenery=containsAny(t,["照明","光","風","空","部屋","ベッド","景色","窓","夜"]);
+ const shortDialogue=length<=42&&!/[。！？!?]/u.test(t.slice(0,-1))&&(/(?:だよ|なさい|ごめんなさい|うん|だ|ね|か|よ|ぞ|ショーン|世界が終わる)$/u.test(t)||/^[「『]/u.test(t));
+ if(quotes)return {type:"dialogue",confidence:"高",reason:"鉤括弧で囲まれている"};
+ if(shortDialogue)return {type:"dialogue",confidence:"低",reason:"短い独立段落と発話に近い文末"};
+ if(report)return {type:"report",confidence:"中",reason:"報道・調査を表す語"};
+ if(mind)return {type:"psychology",confidence:"低",reason:"推測や内省を示す語"};
+ if(body)return {type:"body",confidence:"低",reason:"身体部位・動作の語"};
+ if(scenery)return {type:"scenery",confidence:"低",reason:"環境を表す語"};
+ return {type:"other",confidence:"低",reason:"明確な手がかりなし"};
+}
+function structureAnalyze(source){
+ return source.replace(/\r\n?/g,"\n").split(/\n\s*\n|\n/u).map(x=>x.trim()).filter(Boolean).map((text,i)=>({index:i+1,text,...classifyParagraph(text)}));
+}
+function drawStructure(){
+ const root=$("structure");root.replaceChildren();const sum=$("structureSummary");sum.replaceChildren();
+ if(!structureRows.length){root.textContent="分類対象がありません。";return}
+ for(const [key,label] of Object.entries(PARAGRAPH_TYPES)){const count=structureRows.filter(x=>x.type===key).length;if(count){const chip=document.createElement("span");chip.textContent=label+" "+count+"段落";sum.append(chip)}}
+ const totalChars=structureRows.reduce((n,x)=>n+[...x.text].filter(c=>c.trim().length>0).length,0);
+ const dialogueChars=structureRows.filter(x=>x.type==="dialogue").reduce((n,x)=>n+[...x.text].filter(c=>c.trim().length>0).length,0);
+ const dialogueChip=document.createElement("span");dialogueChip.textContent="推定会話率 "+(totalChars?dialogueChars/totalChars*100:0).toFixed(1)+"%（手動修正反映）";sum.prepend(dialogueChip);
+ for(const item of structureRows){
+ const block=document.createElement("div");block.className="scene-item";
+ const row=document.createElement("div");row.className="row";
+ const number=document.createElement("strong");number.textContent="段落 "+item.index;
+ const select=document.createElement("select");select.setAttribute("aria-label","段落"+item.index+"の分類");
+ for(const [key,label] of Object.entries(PARAGRAPH_TYPES)){const option=document.createElement("option");option.value=key;option.textContent=label;select.append(option)}
+ select.value=item.type;select.addEventListener("change",()=>{item.type=select.value;item.confidence="手動";item.reason="利用者による修正";drawStructure()});
+ row.append(number,select);
+ const excerpt=document.createElement("p");excerpt.textContent=item.text;
+ const reason=document.createElement("div");reason.className="evidence";reason.textContent="判定："+item.confidence+" ／ "+item.reason;
+ block.append(row,excerpt,reason);root.append(block);
+ }
+}
+function structureText(){return "ruka. 表現構造（推定と手動修正）\n"+structureRows.map(x=>"段落"+x.index+" ["+PARAGRAPH_TYPES[x.type]+"] "+x.text).join("\n\n")}
+$("copyStructure").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(structureText());$("status").textContent="構造分析をコピーしました。"}catch(e){$("status").textContent="コピーできませんでした。"}});
 const normalized=t=>t.replace(/\r\n?/g,"\n");
 function measure(input){
  const text=normalized(input),chars=[...text].filter(c=>!/[\s\u3000]/u.test(c)).length;
@@ -57,11 +103,11 @@ function render(f){
  const bar=document.createElement("div");bar.className="bar";const fill=document.createElement("i");fill.style.width=count/total*100+"%";bar.append(fill);wrap.append(title,bar);r.append(wrap);
  }
 }
-function analyze(){const value=$("source").value;if(!value.trim()){$("status").textContent="文章を入力してください。";return}current=measure(value);render(current);$("save").disabled=false;$("export").disabled=false;$("status").textContent="分析しました。結果は端末内で計算しています。"}
+function analyze(){const value=$("source").value;if(!value.trim()){$("status").textContent="文章を入力してください。";return}current=measure(value);render(current);structureRows=structureAnalyze(value);drawStructure();$("copyStructure").disabled=false;$("save").disabled=false;$("export").disabled=false;$("status").textContent="分析しました。結果は端末内で計算しています。"}
 $("analyze").addEventListener("click",analyze);
-$("source").addEventListener("input",()=>{current=null;$("save").disabled=true;$("export").disabled=true;$("count").textContent="再分析が必要";$("status").textContent="文章が変わりました。もう一度分析してください。"});
-$("sample").addEventListener("click",()=>{$("source").value="ぽんぽんは袖を握った。\n「ねむくないぽん」\n返事のあとに、大きなあくびが出た。椿が笑っても、ぽんぽんは目をこすりながら、まじめな顔で首を横に振った。";current=null;$("status").textContent="例文を入力しました。分析ボタンを押してください。"});
-$("clear").addEventListener("click",()=>{$("source").value="";current=null;$("metrics").textContent="分析結果はここに表示されます。";$("rhythm").textContent="分析後に文長の分布を表示します。";$("count").textContent="未分析";$("save").disabled=true;$("export").disabled=true;$("status").textContent="入力を消去しました。"});
+$("source").addEventListener("input",()=>{current=null;structureRows=[];$("copyStructure").disabled=true;$("structure").textContent="再分析が必要です。";$("structureSummary").replaceChildren();$("save").disabled=true;$("export").disabled=true;$("count").textContent="再分析が必要";$("status").textContent="文章が変わりました。もう一度分析してください。"});
+$("sample").addEventListener("click",()=>{$("source").value="ぽんぽんは袖を握った。\n「ねむくないぽん」\n返事のあとに、大きなあくびが出た。椿が笑っても、ぽんぽんは目をこすりながら、まじめな顔で首を横に振った。";current=null;structureRows=[];$("copyStructure").disabled=true;$("status").textContent="例文を入力しました。分析ボタンを押してください。"});
+$("clear").addEventListener("click",()=>{$("source").value="";current=null;structureRows=[];$("copyStructure").disabled=true;$("structure").textContent="分析すると段落ごとの判定を表示します。";$("structureSummary").replaceChildren();$("metrics").textContent="分析結果はここに表示されます。";$("rhythm").textContent="分析後に文長の分布を表示します。";$("count").textContent="未分析";$("save").disabled=true;$("export").disabled=true;$("status").textContent="入力を消去しました。"});
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(styles));return true}catch(e){$("status").textContent="端末への保存に失敗しました。空き容量やブラウザの設定をご確認ください。";return false}}
 function validFeatures(f){return !!(f&&typeof f==="object"&&["chars","sentences","average","median","dialogue","punctuation","linebreaks","paragraphs"].every(k=>Number.isFinite(f[k])&&f[k]>=0)&&f.counts&&["short","medium","long"].every(k=>Number.isFinite(f.counts[k])&&f.counts[k]>=0))}
 function encodeFile(value,name){const blob=new Blob([JSON.stringify(value,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000)}
