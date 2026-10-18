@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f7f5f1"><title>ruka. — 文体分析</title>
+<style>
+:root{color-scheme:light;font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN",sans-serif;background:#f7f5f1;color:#262522}*{box-sizing:border-box}body{margin:0}main{max-width:920px;margin:auto;padding:24px 18px 70px}header{display:flex;align-items:center;justify-content:space-between;margin-bottom:30px}h1{font-family:Georgia,serif;font-size:42px;font-weight:400;letter-spacing:-2px;margin:0}h2{font-size:20px;margin:0 0 14px;font-weight:650}p{line-height:1.75;color:#666157}small,.muted{color:#777168}header small{font-size:11px;letter-spacing:.08em}article{background:#fff;border:1px solid #e6e1d9;border-radius:19px;padding:22px;margin-bottom:16px;box-shadow:0 4px 12px #25201505}label{display:block;font-size:13px;font-weight:650;margin-bottom:10px}textarea,input{font:inherit;width:100%;border:1px solid #dbd6cd;border-radius:12px;background:#fff;padding:14px;color:inherit;outline-offset:2px}textarea{min-height:240px;resize:vertical;line-height:1.85}input{height:46px}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}button{border:1px solid #ded8ce;background:#fff;color:#302b24;padding:12px 15px;border-radius:11px;font:inherit;font-weight:650;cursor:pointer}button.primary{background:#302d29;color:white;border-color:#302d29}button:disabled{opacity:.5;cursor:not-allowed}button:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid #b3a18a}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.metric{background:#f8f6f2;border-radius:12px;padding:16px}.metric b{display:block;font-size:25px;margin-top:8px;font-variant-numeric:tabular-nums}.metric span{font-size:12px;color:#706b63}.wide{grid-column:1/-1}.bar{height:8px;background:#eae6df;border-radius:30px;overflow:hidden;margin-top:10px}.bar i{display:block;height:100%;background:#877560;width:0;transition:width .2s}.row{display:flex;justify-content:space-between;gap:12px;align-items:baseline}.empty{padding:24px 0;text-align:center}.hint{font-size:12px;margin:10px 0 0}.tag{font-size:12px;color:#6d6355;background:#f0ede8;padding:5px 9px;border-radius:20px}footer{text-align:center;color:#8b857e;font-size:12px;margin-top:26px}@media(min-width:680px){.grid{grid-template-columns:repeat(4,1fr)}.wide{grid-column:span 2}}@media(prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+</head>
+<body><main><header><div><h1>ruka.</h1><small>your words, your style.</small></div><span class="tag">v0.1 · 文体分析</span></header>
+<article><h2>好きな文章の特徴を見つける。</h2><p>日本語の文章を貼り付けると、文章の長さ・リズム・会話の割合などを端末内で分析します。入力した文章はサーバーに送信されません。</p><label for="source">分析する文章</label><textarea id="source" placeholder="ここに文章を貼り付けてください……" maxlength="100000"></textarea><div class="actions"><button class="primary" id="analyze">文体を分析</button><button id="sample">例文を入れる</button><button id="clear">消去する</button></div><p id="status" class="hint" role="status" aria-live="polite">文章を入力して「文体を分析」を押してください。</p></article>
+<article><div class="row"><h2>文章の輪郭</h2><span class="muted" id="count">未分析</span></div><div class="grid" id="metrics"><div class="empty wide muted">分析結果はここに表示されます。</div></div></article>
+<article><h2>文のリズム</h2><div id="rhythm" class="muted">分析後に文長の分布を表示します。</div></article>
+<article><h2>この文体の記録</h2><label for="styleName">プリセット名</label><input id="styleName" maxlength="80" placeholder="例：静かな余白"><div class="actions"><button id="save" disabled>分析結果を保存</button><button id="export" disabled>JSONを書き出す</button></div><p class="hint">保存するのは分析値と名前だけです。元の文章は保存しません。端末のブラウザに保存します。</p><div id="saved" class="muted">まだ保存されていません。</div></article>
+<footer>ruka. · 文体の特徴を知るための道具です。文学的な優劣を採点するものではありません。</footer></main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const KEY="ruka.styles.v1";
+let current=null;
+let styles=[];
+try{const x=JSON.parse(localStorage.getItem(KEY)||"[]");if(Array.isArray(x))styles=x.filter(v=>v&&typeof v.name==="string"&&v.features&&typeof v.features==="object").slice(0,100)}catch(e){$("status").textContent="保存データを読み込めませんでした。分析は利用できます。"}
+const normalized=t=>t.replace(/\r\n?/g,"\n");
+function measure(input){
+ const text=normalized(input),chars=[...text].filter(c=>!/[\s\u3000]/u.test(c)).length;
+ const paragraphs=text.split(/\n+/u).map(x=>x.trim()).filter(Boolean);
+ const sentences=(text.match(/[^。！？!?\n]+[。！？!?]?/gu)||[]).map(s=>s.trim()).filter(Boolean);
+ const lengths=sentences.map(s=>[...s].filter(c=>!/[\s\u3000]/u.test(c)).length);
+ const sum=lengths.reduce((a,b)=>a+b,0);
+ const quoteLines=paragraphs.filter(x=>/^[「『]/u.test(x)).length;
+ const quoted=([...(text.matchAll(/[「『]([^」』]*)[」』]/gu))]).reduce((a,m)=>a+[...m[1]].length,0);
+ const counts={short:lengths.filter(x=>x<20).length,medium:lengths.filter(x=>x>=20&&x<50).length,long:lengths.filter(x=>x>=50).length};
+ return {chars,paragraphs:paragraphs.length,sentences:sentences.length,average:lengths.length?sum/lengths.length:0,median:lengths.length?[...lengths].sort((a,b)=>a-b)[Math.floor((lengths.length-1)/2)]:0,dialogue:chars?Math.min(100,quoted/chars*100):0,quoteLines,punctuation:(text.match(/[、，]/gu)||[]).length,linebreaks:(text.match(/\n/gu)||[]).length,counts};
+}
+const number=n=>Number(n).toLocaleString("ja-JP");
+function metric(name,value,note){const e=document.createElement("div");e.className="metric";const label=document.createElement("span");label.textContent=name;const v=document.createElement("b");v.textContent=value;const help=document.createElement("span");help.textContent=note;e.append(label,v,help);return e}
+function render(f){
+ $("count").textContent="分析済み";
+ const root=$("metrics");root.replaceChildren(
+ metric("文字数",number(f.chars),"空白・改行を除く"),
+ metric("文の数",number(f.sentences),"句点・改行で推定"),
+ metric("平均文長",f.average.toFixed(1)+"字","1文あたり"),
+ metric("会話文の割合",f.dialogue.toFixed(1)+"%","括弧内の文字数"),
+ metric("段落数",number(f.paragraphs),"空行を除く"),
+ metric("文長の中央値",number(f.median)+"字","推定値"),
+ metric("読点",number(f.punctuation),"、 と ，"),
+ metric("改行",number(f.linebreaks),"改行コード数"));
+ const r=$("rhythm");r.replaceChildren();
+ const total=f.sentences||1;
+ for(const [label,count] of [["短文（19字以下）",f.counts.short],["中文（20〜49字）",f.counts.medium],["長文（50字以上）",f.counts.long]]){
+ const wrap=document.createElement("div");wrap.style.marginBottom="17px";
+ const title=document.createElement("div");title.className="row";const a=document.createElement("span");a.textContent=label;const b=document.createElement("span");b.textContent=count+"文 · "+(count/total*100).toFixed(0)+"%";title.append(a,b);
+ const bar=document.createElement("div");bar.className="bar";const fill=document.createElement("i");fill.style.width=count/total*100+"%";bar.append(fill);wrap.append(title,bar);r.append(wrap);
+ }
+}
+function analyze(){const value=$("source").value;if(!value.trim()){$("status").textContent="文章を入力してください。";return}current=measure(value);render(current);$("save").disabled=false;$("export").disabled=false;$("status").textContent="分析しました。結果は端末内で計算しています。"}
+$("analyze").addEventListener("click",analyze);
+$("source").addEventListener("input",()=>{current=null;$("save").disabled=true;$("export").disabled=true;$("count").textContent="再分析が必要";$("status").textContent="文章が変わりました。もう一度分析してください。"});
+$("sample").addEventListener("click",()=>{$("source").value="ぽんぽんは袖を握った。\n「ねむくないぽん」\n返事のあとに、大きなあくびが出た。椿が笑っても、ぽんぽんは目をこすりながら、まじめな顔で首を横に振った。";current=null;$("status").textContent="例文を入力しました。分析ボタンを押してください。"});
+$("clear").addEventListener("click",()=>{$("source").value="";current=null;$("metrics").textContent="分析結果はここに表示されます。";$("rhythm").textContent="分析後に文長の分布を表示します。";$("count").textContent="未分析";$("save").disabled=true;$("export").disabled=true;$("status").textContent="入力を消去しました。"});
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(styles));return true}catch(e){$("status").textContent="端末への保存に失敗しました。空き容量やブラウザの設定をご確認ください。";return false}}
+function savedList(){
+ const root=$("saved");root.replaceChildren();if(!styles.length){root.textContent="まだ保存されていません。";return}
+ for(const s of [...styles].reverse()){
+ const item=document.createElement("div");item.className="row";item.style.borderTop="1px solid #eee8e0";item.style.padding="12px 0";
+ const info=document.createElement("div");const strong=document.createElement("strong");strong.textContent=s.name;const detail=document.createElement("div");detail.className="hint";detail.textContent=s.features.chars+"字 · 平均文長"+s.features.average.toFixed(1)+"字";info.append(strong,detail);
+ const del=document.createElement("button");del.textContent="削除";del.setAttribute("aria-label",s.name+"を削除");del.addEventListener("click",()=>{styles=styles.filter(x=>x.id!==s.id);persist();savedList()});item.append(info,del);root.append(item)
+ }
+}
+$("save").addEventListener("click",()=>{if(!current)return;const name=$("styleName").value.trim();if(!name){$("status").textContent="プリセット名を入力してください。";$("styleName").focus();return}if(styles.length>=100){$("status").textContent="保存上限は100件です。";return}
+ const entry={id:Date.now()+"-"+Math.random().toString(36).slice(2),name,features:structuredClone(current),createdAt:new Date().toISOString()};
+ styles.push(entry);if(persist()){$("status").textContent="「"+name+"」の分析結果を保存しました。";savedList()}
+});
+$("export").addEventListener("click",()=>{if(!current)return;const payload={format:"ruka.style.v1",name:$("styleName").value.trim()||"無題",features:current,exportedAt:new Date().toISOString()};
+ const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="ruka-style.json";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000)});
+savedList();
+</script></body></html>
