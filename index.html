@@ -5,13 +5,15 @@
 <meta name="theme-color" content="#f7f5f1"><title>ruka. — 文体分析</title>
 <style>
 :root{color-scheme:light;font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN",sans-serif;background:#f7f5f1;color:#262522}*{box-sizing:border-box}body{margin:0}main{max-width:920px;margin:auto;padding:24px 18px 70px}header{display:flex;align-items:center;justify-content:space-between;margin-bottom:30px}h1{font-family:Georgia,serif;font-size:42px;font-weight:400;letter-spacing:-2px;margin:0}h2{font-size:20px;margin:0 0 14px;font-weight:650}p{line-height:1.75;color:#666157}small,.muted{color:#777168}header small{font-size:11px;letter-spacing:.08em}article{background:#fff;border:1px solid #e6e1d9;border-radius:19px;padding:22px;margin-bottom:16px;box-shadow:0 4px 12px #25201505}label{display:block;font-size:13px;font-weight:650;margin-bottom:10px}textarea,input{font:inherit;width:100%;border:1px solid #dbd6cd;border-radius:12px;background:#fff;padding:14px;color:inherit;outline-offset:2px}textarea{min-height:240px;resize:vertical;line-height:1.85}input{height:46px}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}button{border:1px solid #ded8ce;background:#fff;color:#302b24;padding:12px 15px;border-radius:11px;font:inherit;font-weight:650;cursor:pointer}button.primary{background:#302d29;color:white;border-color:#302d29}button:disabled{opacity:.5;cursor:not-allowed}button:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid #b3a18a}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.metric{background:#f8f6f2;border-radius:12px;padding:16px}.metric b{display:block;font-size:25px;margin-top:8px;font-variant-numeric:tabular-nums}.metric span{font-size:12px;color:#706b63}.wide{grid-column:1/-1}.bar{height:8px;background:#eae6df;border-radius:30px;overflow:hidden;margin-top:10px}.bar i{display:block;height:100%;background:#877560;width:0;transition:width .2s}.row{display:flex;justify-content:space-between;gap:12px;align-items:baseline}.empty{padding:24px 0;text-align:center}.hint{font-size:12px;margin:10px 0 0}.tag{font-size:12px;color:#6d6355;background:#f0ede8;padding:5px 9px;border-radius:20px}footer{text-align:center;color:#8b857e;font-size:12px;margin-top:26px}@media(min-width:680px){.grid{grid-template-columns:repeat(4,1fr)}.wide{grid-column:span 2}}@media(prefers-reduced-motion:reduce){.bar i{transition:none}}
+.blend-line{padding:12px 0;border-bottom:1px solid #eee8e0}.blend-line label{margin:0 0 7px}.blend-line input[type=range]{height:auto;padding:0;accent-color:#877560}.blend-actions{display:flex;gap:8px;align-items:center}.blend-actions input{width:84px;height:40px}.blend-result{background:#f8f6f2;border-radius:12px;padding:15px;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}.file-picker{display:none}
 </style>
 </head>
-<body><main><header><div><h1>ruka.</h1><small>your words, your style.</small></div><span class="tag">v0.1 · 文体分析</span></header>
+<body><main><header><div><h1>ruka.</h1><small>your words, your style.</small></div><span class="tag">v0.2 · 文体ブレンド</span></header>
 <article><h2>好きな文章の特徴を見つける。</h2><p>日本語の文章を貼り付けると、文章の長さ・リズム・会話の割合などを端末内で分析します。入力した文章はサーバーに送信されません。</p><label for="source">分析する文章</label><textarea id="source" placeholder="ここに文章を貼り付けてください……" maxlength="100000"></textarea><div class="actions"><button class="primary" id="analyze">文体を分析</button><button id="sample">例文を入れる</button><button id="clear">消去する</button></div><p id="status" class="hint" role="status" aria-live="polite">文章を入力して「文体を分析」を押してください。</p></article>
 <article><div class="row"><h2>文章の輪郭</h2><span class="muted" id="count">未分析</span></div><div class="grid" id="metrics"><div class="empty wide muted">分析結果はここに表示されます。</div></div></article>
 <article><h2>文のリズム</h2><div id="rhythm" class="muted">分析後に文長の分布を表示します。</div></article>
 <article><h2>この文体の記録</h2><label for="styleName">プリセット名</label><input id="styleName" maxlength="80" placeholder="例：静かな余白"><div class="actions"><button id="save" disabled>分析結果を保存</button><button id="export" disabled>JSONを書き出す</button></div><p class="hint">保存するのは分析値と名前だけです。元の文章は保存しません。端末のブラウザに保存します。</p><div id="saved" class="muted">まだ保存されていません。</div></article>
+<article><h2>文体をブレンドする</h2><p>保存した文体を2つ以上選び、割合を調整します。文体の統計値を混ぜ合わせ、執筆用の指示を作ります。AIによる文章生成はまだ行いません。</p><div id="blendStyles" class="muted">プリセットを2件以上保存すると利用できます。</div><div class="actions"><button id="blend" class="primary">ブレンドする</button><button id="copyBlend" disabled>指示をコピー</button><button id="saveBlend" disabled>ブレンドを保存</button></div><p id="blendStatus" class="hint" role="status" aria-live="polite"></p><div id="blendOutput" class="blend-result" hidden></div><div class="actions"><button id="exportAll">プリセットを一括書き出し</button><button id="importAll">プリセットを読み込み</button><input type="file" id="importFile" class="file-picker" accept="application/json,.json" aria-label="JSONファイルを読み込み"></div></article>
 <footer>ruka. · 文体の特徴を知るための道具です。文学的な優劣を採点するものではありません。</footer></main>
 <script>
 "use strict";
@@ -19,6 +21,8 @@ const $=id=>document.getElementById(id);
 const KEY="ruka.styles.v1";
 let current=null;
 let styles=[];
+let blended=null;
+const weights={};
 try{const x=JSON.parse(localStorage.getItem(KEY)||"[]");if(Array.isArray(x))styles=x.filter(v=>v&&typeof v.name==="string"&&v.features&&typeof v.features==="object").slice(0,100)}catch(e){$("status").textContent="保存データを読み込めませんでした。分析は利用できます。"}
 const normalized=t=>t.replace(/\r\n?/g,"\n");
 function measure(input){
@@ -59,13 +63,41 @@ $("source").addEventListener("input",()=>{current=null;$("save").disabled=true;$
 $("sample").addEventListener("click",()=>{$("source").value="ぽんぽんは袖を握った。\n「ねむくないぽん」\n返事のあとに、大きなあくびが出た。椿が笑っても、ぽんぽんは目をこすりながら、まじめな顔で首を横に振った。";current=null;$("status").textContent="例文を入力しました。分析ボタンを押してください。"});
 $("clear").addEventListener("click",()=>{$("source").value="";current=null;$("metrics").textContent="分析結果はここに表示されます。";$("rhythm").textContent="分析後に文長の分布を表示します。";$("count").textContent="未分析";$("save").disabled=true;$("export").disabled=true;$("status").textContent="入力を消去しました。"});
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(styles));return true}catch(e){$("status").textContent="端末への保存に失敗しました。空き容量やブラウザの設定をご確認ください。";return false}}
+function validFeatures(f){return !!(f&&typeof f==="object"&&["chars","sentences","average","median","dialogue","punctuation","linebreaks","paragraphs"].every(k=>Number.isFinite(f[k])&&f[k]>=0)&&f.counts&&["short","medium","long"].every(k=>Number.isFinite(f.counts[k])&&f.counts[k]>=0))}
+function encodeFile(value,name){const blob=new Blob([JSON.stringify(value,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000)}
+function blendList(){
+ const root=$("blendStyles");root.replaceChildren();
+ if(styles.length<2){root.textContent="プリセットを2件以上保存すると利用できます。";return}
+ for(const style of styles){
+ const wrap=document.createElement("div");wrap.className="blend-line";
+ const label=document.createElement("label");const select=document.createElement("input");select.type="checkbox";select.checked=weights[style.id]!=null;select.addEventListener("change",()=>{if(select.checked)weights[style.id]=50;else delete weights[style.id];blended=null;$("saveBlend").disabled=true;$("copyBlend").disabled=true;$("blendOutput").hidden=true;blendList()});
+ label.append(select,document.createTextNode(" "+style.name));
+ const actions=document.createElement("div");actions.className="blend-actions";
+ const range=document.createElement("input");range.type="range";range.min="0";range.max="100";range.value=weights[style.id]??50;range.disabled=!select.checked;
+ const val=document.createElement("span");val.textContent=range.value+"%";range.addEventListener("input",()=>{weights[style.id]=Number(range.value);val.textContent=range.value+"%";blended=null;$("saveBlend").disabled=true;$("copyBlend").disabled=true;$("blendOutput").hidden=true});
+ actions.append(range,val);wrap.append(label,actions);root.append(wrap);
+ }
+}
+function mixStyles(items){
+ const total=items.reduce((n,p)=>n+p.weight,0);if(total<=0)return null;
+ const fields=["chars","sentences","average","median","dialogue","punctuation","linebreaks","paragraphs","quoteLines"];
+ const out={counts:{}};
+ for(const k of fields)out[k]=items.reduce((n,p)=>n+(Number(p.style.features[k])||0)*p.weight,0)/total;
+ for(const k of ["short","medium","long"])out.counts[k]=items.reduce((n,p)=>n+(Number(p.style.features.counts[k])||0)*p.weight,0)/total;
+ return out;
+}
+function instruction(f,items){
+ const list=items.map(x=>x.style.name+" "+Math.round(x.weight/items.reduce((n,p)=>n+p.weight,0)*100)+"%").join("、");
+ return "次の文体特徴を参考に、日本語の小説文を執筆してください。\\n文体ブレンド: "+list+"\\n平均文長: 約"+f.average.toFixed(1)+"字、会話文比率: 約"+f.dialogue.toFixed(1)+"%、読点の使用と改行のリズムも意識してください。\\n短文・中文・長文の配分は統計的な目安として扱い、自然な表現を優先してください。\\nプロットの確定事項や人物設定を勝手に変えないこと。参考文を逐語的に再現しないこと。";
+}
 function savedList(){
- const root=$("saved");root.replaceChildren();if(!styles.length){root.textContent="まだ保存されていません。";return}
+ const root=$("saved");root.replaceChildren();if(!styles.length){root.textContent="まだ保存されていません。";blendList();return}
  for(const s of [...styles].reverse()){
  const item=document.createElement("div");item.className="row";item.style.borderTop="1px solid #eee8e0";item.style.padding="12px 0";
  const info=document.createElement("div");const strong=document.createElement("strong");strong.textContent=s.name;const detail=document.createElement("div");detail.className="hint";detail.textContent=s.features.chars+"字 · 平均文長"+s.features.average.toFixed(1)+"字";info.append(strong,detail);
- const del=document.createElement("button");del.textContent="削除";del.setAttribute("aria-label",s.name+"を削除");del.addEventListener("click",()=>{styles=styles.filter(x=>x.id!==s.id);persist();savedList()});item.append(info,del);root.append(item)
+ const del=document.createElement("button");del.textContent="削除";del.setAttribute("aria-label",s.name+"を削除");del.addEventListener("click",()=>{styles=styles.filter(x=>x.id!==s.id);delete weights[s.id];blended=null;$("saveBlend").disabled=true;$("copyBlend").disabled=true;$("blendOutput").hidden=true;persist();savedList()});item.append(info,del);root.append(item)
  }
+ blendList();
 }
 $("save").addEventListener("click",()=>{if(!current)return;const name=$("styleName").value.trim();if(!name){$("status").textContent="プリセット名を入力してください。";$("styleName").focus();return}if(styles.length>=100){$("status").textContent="保存上限は100件です。";return}
  const entry={id:Date.now()+"-"+Math.random().toString(36).slice(2),name,features:structuredClone(current),createdAt:new Date().toISOString()};
@@ -73,5 +105,32 @@ $("save").addEventListener("click",()=>{if(!current)return;const name=$("styleNa
 });
 $("export").addEventListener("click",()=>{if(!current)return;const payload={format:"ruka.style.v1",name:$("styleName").value.trim()||"無題",features:current,exportedAt:new Date().toISOString()};
  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="ruka-style.json";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000)});
+$("blend").addEventListener("click",()=>{
+ const items=styles.filter(style=>weights[style.id]>0).map(style=>({style,weight:weights[style.id]}));
+ if(items.length<2){$("blendStatus").textContent="割合が0より大きい文体を2件以上選択してください。";return}
+ if(items.some(x=>!validFeatures(x.style.features))){$("blendStatus").textContent="保存された文体データに問題があります。";return}
+ const features=mixStyles(items);if(!features)return;
+ blended={features,items,text:instruction(features,items)};
+ $("blendOutput").textContent=blended.text;$("blendOutput").hidden=false;
+ $("blendStatus").textContent="文体をブレンドしました。";$("saveBlend").disabled=false;$("copyBlend").disabled=false;
+});
+$("copyBlend").addEventListener("click",async()=>{if(!blended)return;try{await navigator.clipboard.writeText(blended.text);$("blendStatus").textContent="指示をコピーしました。"}catch(e){$("blendStatus").textContent="自動コピーできませんでした。表示した指示を長押ししてコピーしてください。"}});
+$("saveBlend").addEventListener("click",()=>{if(!blended)return;if(styles.length>=100){$("blendStatus").textContent="保存上限は100件です。";return}
+ const name=prompt("ブレンドの名前","ミックス文体");if(!name||!name.trim())return;
+ const entry={id:Date.now()+"-"+Math.random().toString(36).slice(2),name:name.trim().slice(0,80),features:blended.features,createdAt:new Date().toISOString(),type:"blend"};
+ styles.push(entry);if(persist()){$("blendStatus").textContent="ブレンドを保存しました。";savedList();}
+});
+$("exportAll").addEventListener("click",()=>encodeFile({format:"ruka.styles.v1",styles},"ruka-presets.json"));
+$("importAll").addEventListener("click",()=>$("importFile").click());
+$("importFile").addEventListener("change",async(e)=>{const file=e.target.files?.[0];e.target.value="";if(!file)return;
+ if(file.size>2000000){$("blendStatus").textContent="ファイルが大きすぎます（2MB以内）。";return}
+ try{const data=JSON.parse(await file.text());const candidates=Array.isArray(data?.styles)?data.styles:(data?.features?[data]:[]);
+ const accepted=candidates.filter(x=>x&&typeof x.name==="string"&&x.name.length>0&&x.name.length<=80&&validFeatures(x.features)).slice(0,100);
+ if(!accepted.length){$("blendStatus").textContent="読み込める文体がありません。";return}
+ const incoming=accepted.slice(0,Math.max(0,100-styles.length)).map(x=>({id:Date.now()+"-"+Math.random().toString(36).slice(2),name:x.name,features:x.features,createdAt:new Date().toISOString()}));
+ const previous=styles;styles=styles.concat(incoming);
+ if(persist()){$("blendStatus").textContent=incoming.length+"件を読み込みました。";savedList()}else styles=previous;
+ }catch(err){$("blendStatus").textContent="JSONを読み込めませんでした。"}
+});
 savedList();
 </script></body></html>
