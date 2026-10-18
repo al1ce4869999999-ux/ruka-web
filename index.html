@@ -8,11 +8,12 @@
 .blend-line{padding:12px 0;border-bottom:1px solid #eee8e0}.blend-line label{margin:0 0 7px}.blend-line input[type=range]{height:auto;padding:0;accent-color:#877560}.blend-actions{display:flex;gap:8px;align-items:center}.blend-actions input{width:84px;height:40px}.blend-result{background:#f8f6f2;border-radius:12px;padding:15px;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}.file-picker{display:none}
 .scene-item{border-top:1px solid #ece7df;padding:13px 0}.scene-item p{margin:6px 0;white-space:pre-wrap;overflow-wrap:anywhere;color:#302d29}.scene-item select{height:38px;padding:6px;border:1px solid #d7d0c6;border-radius:8px;background:white;max-width:100%}.evidence{font-size:12px;color:#6d665d}.summary-chips{display:flex;flex-wrap:wrap;gap:8px}.summary-chips span{padding:7px 10px;border-radius:12px;background:#f4f0ea;font-size:12px}</style>
 </head>
-<body><main><header><div><h1>ruka.</h1><small>your words, your style.</small></div><span class="tag">v0.3 · 表現分析</span></header>
+<body><main><header><div><h1>ruka.</h1><small>your words, your style.</small></div><span class="tag">v0.4 · 表現技法</span></header>
 <article><h2>好きな文章の特徴を見つける。</h2><p>日本語の文章を貼り付けると、文章の長さ・リズム・会話の割合などを端末内で分析します。入力した文章はサーバーに送信されません。</p><label for="source">分析する文章</label><textarea id="source" placeholder="ここに文章を貼り付けてください……" maxlength="100000"></textarea><div class="actions"><button class="primary" id="analyze">文体を分析</button><button id="sample">例文を入れる</button><button id="clear">消去する</button></div><p id="status" class="hint" role="status" aria-live="polite">文章を入力して「文体を分析」を押してください。</p></article>
 <article><div class="row"><h2>文章の輪郭</h2><span class="muted" id="count">未分析</span></div><div class="grid" id="metrics"><div class="empty wide muted">分析結果はここに表示されます。</div></div></article>
 <article><h2>文のリズム</h2><div id="rhythm" class="muted">分析後に文長の分布を表示します。</div></article>
 <article><h2>表現の構造 <span class="tag">試験版</span></h2><p>段落の役割を推定します。鉤括弧なしの台詞も候補として検出しますが、誤判定するため、分類を手動で変更できます。</p><div id="structureSummary" class="summary-chips"></div><div id="structure" class="muted">分析すると段落ごとの判定を表示します。</div><div class="actions"><button id="copyStructure" disabled>構造分析をコピー</button></div><p class="hint">単語・文の形による簡易判定です。伏線、語り手の信頼性、読者の解釈の反転は自動で確定しません。</p></article>
+<article><h2>表現技法の手がかり <span class="tag">実験機能</span></h2><p>比喩・価値の対比・後半の情報開示につながりそうな段落を提示します。物語の意味を機械的に断定せず、根拠文を確認できます。</p><div id="techniques" class="muted">文章を分析すると候補を表示します。</div><p class="hint">これはキーワードと段落位置による候補抽出です。読者の解釈・作者の意図を判定するものではありません。</p></article>
 <article><h2>この文体の記録</h2><label for="styleName">プリセット名</label><input id="styleName" maxlength="80" placeholder="例：静かな余白"><div class="actions"><button id="save" disabled>分析結果を保存</button><button id="export" disabled>JSONを書き出す</button></div><p class="hint">保存するのは分析値と名前だけです。元の文章は保存しません。端末のブラウザに保存します。</p><div id="saved" class="muted">まだ保存されていません。</div></article>
 <article><h2>文体をブレンドする</h2><p>保存した文体を2つ以上選び、割合を調整します。文体の統計値を混ぜ合わせ、執筆用の指示を作ります。AIによる文章生成はまだ行いません。</p><div id="blendStyles" class="muted">プリセットを2件以上保存すると利用できます。</div><div class="actions"><button id="blend" class="primary">ブレンドする</button><button id="copyBlend" disabled>指示をコピー</button><button id="saveBlend" disabled>ブレンドを保存</button></div><p id="blendStatus" class="hint" role="status" aria-live="polite"></p><div id="blendOutput" class="blend-result" hidden></div><div class="actions"><button id="exportAll">プリセットを一括書き出し</button><button id="importAll">プリセットを読み込み</button><input type="file" id="importFile" class="file-picker" accept="application/json,.json" aria-label="JSONファイルを読み込み"></div></article>
 <footer>ruka. · 文体の特徴を知るための道具です。文学的な優劣を採点するものではありません。</footer></main>
@@ -70,6 +71,34 @@ function drawStructure(){
 }
 function structureText(){return "ruka. 表現構造（推定と手動修正）\n"+structureRows.map(x=>"段落"+x.index+" ["+PARAGRAPH_TYPES[x.type]+"] "+x.text).join("\n\n")}
 $("copyStructure").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(structureText());$("status").textContent="構造分析をコピーしました。"}catch(e){$("status").textContent="コピーできませんでした。"}});
+
+const FIGURES=[["比喩",["ように","みたいに","まるで","さながら","のような","かのよう"]],["死・喪失の語",["死","亡く","終わる","朽ち","毒","遺体","眠る"]],["親密さの語",["抱き","撫で","口付け","愛おしい","一緒","共に","側に"]],["情報開示",["実は","正直","知っていた","判明","新聞","司法解剖","トリカブト","予感"]]];
+function detectTechniques(rows){
+ const findings=[];
+ rows.forEach((row,i)=>{
+  for(const [name,words] of FIGURES){const matches=words.filter(w=>row.text.includes(w));if(matches.length)findings.push({name,index:i+1,text:row.text,evidence:matches.join("、"),kind:"direct"})}
+ });
+ const intimacy=rows.flatMap((r,i)=>FIGURES[2][1].some(w=>r.text.includes(w))?[i]:[]);
+ const loss=rows.flatMap((r,i)=>FIGURES[1][1].some(w=>r.text.includes(w))?[i]:[]);
+ for(const a of intimacy){const b=loss.find(n=>Math.abs(n-a)<=2);if(b!==undefined){findings.push({name:"親密さと喪失の近接",index:a+1,text:rows[a].text,evidence:"段落 "+(a+1)+" と段落 "+(b+1)+" が近接",kind:"hypothesis"});break}}
+ const latter=rows.filter((r,i)=>i>=Math.floor(rows.length*0.6)&&FIGURES[3][1].some(w=>r.text.includes(w)));
+ if(latter.length){const r=latter[0];findings.push({name:"後半の情報開示候補",index:r.index,text:r.text,evidence:"後半に情報開示を示す語が存在",kind:"hypothesis"})}
+ return findings.slice(0,40);
+}
+function showTechniques(){
+ const root=$("techniques");root.replaceChildren();
+ const hits=detectTechniques(structureRows);
+ if(!hits.length){root.textContent="明確な候補は見つかりませんでした。";return}
+ const info=document.createElement("p");info.className="hint";info.textContent=hits.length+"件の候補。語句の一致は意味の確定ではありません。";root.append(info);
+ hits.forEach(hit=>{
+  const block=document.createElement("div");block.className="scene-item";
+  const heading=document.createElement("strong");heading.textContent=hit.name+" · 段落"+hit.index;
+  const evidence=document.createElement("div");evidence.className="evidence";evidence.textContent="根拠: "+hit.evidence+(hit.kind==="hypothesis"?"（仮説）":"（語句一致）");
+  const excerpt=document.createElement("p");excerpt.textContent=hit.text;
+  block.append(heading,evidence,excerpt);root.append(block);
+ });
+}
+
 const normalized=t=>t.replace(/\r\n?/g,"\n");
 function measure(input){
  const text=normalized(input),chars=[...text].filter(c=>!/[\s\u3000]/u.test(c)).length;
@@ -103,11 +132,11 @@ function render(f){
  const bar=document.createElement("div");bar.className="bar";const fill=document.createElement("i");fill.style.width=count/total*100+"%";bar.append(fill);wrap.append(title,bar);r.append(wrap);
  }
 }
-function analyze(){const value=$("source").value;if(!value.trim()){$("status").textContent="文章を入力してください。";return}current=measure(value);render(current);structureRows=structureAnalyze(value);drawStructure();$("copyStructure").disabled=false;$("save").disabled=false;$("export").disabled=false;$("status").textContent="分析しました。結果は端末内で計算しています。"}
+function analyze(){const value=$("source").value;if(!value.trim()){$("status").textContent="文章を入力してください。";return}current=measure(value);render(current);structureRows=structureAnalyze(value);drawStructure();showTechniques();$("copyStructure").disabled=false;$("save").disabled=false;$("export").disabled=false;$("status").textContent="分析しました。結果は端末内で計算しています。"}
 $("analyze").addEventListener("click",analyze);
-$("source").addEventListener("input",()=>{current=null;structureRows=[];$("copyStructure").disabled=true;$("structure").textContent="再分析が必要です。";$("structureSummary").replaceChildren();$("save").disabled=true;$("export").disabled=true;$("count").textContent="再分析が必要";$("status").textContent="文章が変わりました。もう一度分析してください。"});
+$("source").addEventListener("input",()=>{current=null;structureRows=[];$("copyStructure").disabled=true;$("structure").textContent="再分析が必要です。";$("structureSummary").replaceChildren();$("techniques").textContent="再分析が必要です。";$("save").disabled=true;$("export").disabled=true;$("count").textContent="再分析が必要";$("status").textContent="文章が変わりました。もう一度分析してください。"});
 $("sample").addEventListener("click",()=>{$("source").value="ぽんぽんは袖を握った。\n「ねむくないぽん」\n返事のあとに、大きなあくびが出た。椿が笑っても、ぽんぽんは目をこすりながら、まじめな顔で首を横に振った。";current=null;structureRows=[];$("copyStructure").disabled=true;$("status").textContent="例文を入力しました。分析ボタンを押してください。"});
-$("clear").addEventListener("click",()=>{$("source").value="";current=null;structureRows=[];$("copyStructure").disabled=true;$("structure").textContent="分析すると段落ごとの判定を表示します。";$("structureSummary").replaceChildren();$("metrics").textContent="分析結果はここに表示されます。";$("rhythm").textContent="分析後に文長の分布を表示します。";$("count").textContent="未分析";$("save").disabled=true;$("export").disabled=true;$("status").textContent="入力を消去しました。"});
+$("clear").addEventListener("click",()=>{$("source").value="";current=null;structureRows=[];$("copyStructure").disabled=true;$("structure").textContent="分析すると段落ごとの判定を表示します。";$("structureSummary").replaceChildren();$("techniques").textContent="文章を分析すると候補を表示します。";$("metrics").textContent="分析結果はここに表示されます。";$("rhythm").textContent="分析後に文長の分布を表示します。";$("count").textContent="未分析";$("save").disabled=true;$("export").disabled=true;$("status").textContent="入力を消去しました。"});
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(styles));return true}catch(e){$("status").textContent="端末への保存に失敗しました。空き容量やブラウザの設定をご確認ください。";return false}}
 function validFeatures(f){return !!(f&&typeof f==="object"&&["chars","sentences","average","median","dialogue","punctuation","linebreaks","paragraphs"].every(k=>Number.isFinite(f[k])&&f[k]>=0)&&f.counts&&["short","medium","long"].every(k=>Number.isFinite(f.counts[k])&&f.counts[k]>=0))}
 function encodeFile(value,name){const blob=new Blob([JSON.stringify(value,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000)}
